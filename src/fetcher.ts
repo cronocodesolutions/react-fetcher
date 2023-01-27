@@ -14,18 +14,18 @@ export interface FetcherOptions<TSuccess, TError400, TBody, TUrlParams> {
 
 namespace Fetcher {
   export async function go<TSuccess, TError400, TBody, TUrlParams>(
-    fetchObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
-    options: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
+    fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
+    options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ): Promise<TSuccess> {
-    const { url, urlType, method, responseType } = fetchObject || {};
+    const { url, urlType, method, responseType } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
     const { base, on401 } = FetcherSettings.settings;
 
     let resourceUrl = typeof url === 'function' ? url(urlParams!) : url;
     resourceUrl = base && urlType !== 'absolute' ? base + resourceUrl : resourceUrl;
 
-    const headers = await prepareHeaders(fetchObject);
-    const body = prepareBody(fetchObject, options);
+    const headers = await prepareHeaders(fetcherObject);
+    const body = prepareBody(fetcherObject, options);
 
     try {
       const response = await fetch(resourceUrl, {
@@ -64,9 +64,9 @@ namespace Fetcher {
   }
 
   async function prepareHeaders<TSuccess, TError400, TBody, TUrlParams>(
-    fetchObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
+    fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization } = fetchObject || {};
+    const { contentType, authorization } = fetcherObject;
     const { getToken } = FetcherSettings.settings;
 
     const headers: Record<string, string> = {};
@@ -84,10 +84,10 @@ namespace Fetcher {
   }
 
   function prepareBody<TSuccess, TError400, TBody, TUrlParams>(
-    fetchObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
-    options: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
+    fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
+    options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ): BodyInit | undefined {
-    const { contentType } = fetchObject || {};
+    const { contentType } = fetcherObject;
     const { body } = options || {};
 
     if (!body) {
