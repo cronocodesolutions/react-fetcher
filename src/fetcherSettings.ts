@@ -1,6 +1,6 @@
 interface Settings {
   base?: string;
-  on401?: () => void;
+  on401?: () => Promise<void>;
   getToken?: () => Promise<string | undefined>;
 }
 
