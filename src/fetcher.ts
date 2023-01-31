@@ -113,6 +113,8 @@ namespace Fetcher {
     switch (responseType) {
       case 'blob':
         return await response.blob();
+      case 'empty':
+        return null;
       default:
         return await response.json();
     }

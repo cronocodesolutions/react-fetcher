@@ -1,6 +1,6 @@
 {
   "name": "@cronocode/react-fetcher",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "HTTP client for a browser",
   "main": "index.js",
   "module": "index.js",

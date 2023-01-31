@@ -1,4 +1,4 @@
-export type ResponseType = 'json' | 'blob';
+export type ResponseType = 'json' | 'blob' | 'empty';
 
 export interface FetcherObject<TSuccess = unknown, TError400 = unknown, TBody = unknown, TUrlParams = unknown> {
   url: string | ((urlParam: TUrlParams) => string);
