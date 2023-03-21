@@ -56,7 +56,7 @@ namespace Fetcher {
 
       throw response;
     } catch (error) {
-      fail?.(error);
+      fail400 || fail?.(error);
       always?.();
 
       throw error;
