@@ -27,6 +27,7 @@ namespace Fetcher {
     const headers = await prepareHeaders(fetcherObject);
     const body = prepareBody(fetcherObject, options);
 
+    let status = 0;
     try {
       const response = await fetch(resourceUrl, {
         method,
@@ -34,7 +35,7 @@ namespace Fetcher {
         body,
       });
 
-      const { status } = response;
+      status = response.status;
       if (status >= 200 && status < 300) {
         const result: TSuccess = await readSuccessResponseData(response, responseType);
 
@@ -56,7 +57,9 @@ namespace Fetcher {
 
       throw response;
     } catch (error) {
-      fail400 || fail?.(error);
+      const doNotCallFail = fail400 && status === 400;
+      doNotCallFail || fail?.({ error, status });
+
       always?.();
 
       throw error;
