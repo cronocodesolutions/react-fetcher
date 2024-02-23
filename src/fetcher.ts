@@ -70,9 +70,9 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
   ) {
     const { contentType, authorization } = fetcherObject;
-    const { getToken } = FetcherSettings.settings;
+    const { getToken, headers: globalHeaders } = FetcherSettings.settings;
 
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = globalHeaders ?? {};
 
     if (!contentType || contentType === 'application/json') {
       headers['content-type'] = contentType || 'application/json';
