@@ -1,4 +1,4 @@
-export type ResponseType = 'json' | 'blob' | 'empty';
+export type ResponseType = 'json' | 'blob' | 'empty' | 'text';
 
 export interface FetcherObject<TSuccess = unknown, TError400 = unknown, TBody = unknown, TUrlParams = unknown> {
   url: string | ((urlParam: TUrlParams) => string);
@@ -7,4 +7,6 @@ export interface FetcherObject<TSuccess = unknown, TError400 = unknown, TBody = 
   contentType?: 'application/json' | 'multipart/form-data';
   authorization?: 'token' | 'anonymous';
   responseType?: ResponseType;
+  errorResponseType?: ResponseType;
+  name?: string;
 }

@@ -1,5 +1,5 @@
 import { FetcherObject, ResponseType } from './fetcherObject';
-import FetcherSettings from './fetcherSettings';
+import FetcherSettings, { FetcherError } from './fetcherSettings';
 
 type ErrorResponse = any; //TODO: define error structure
 
@@ -8,7 +8,7 @@ export interface FetcherOptions<TSuccess, TError400, TBody, TUrlParams> {
   body?: TBody;
   success?: (result: TSuccess) => void;
   fail400?: (result: TError400) => void;
-  fail?: (result: ErrorResponse) => void;
+  fail?: (data: FetcherError) => void;
   always?: () => void;
 }
 
@@ -17,27 +17,30 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ): Promise<TSuccess> {
-    const { url, urlType, method, responseType } = fetcherObject || {};
+    const { url, urlType, method, responseType, errorResponseType, name } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
-    const { base, on401 } = FetcherSettings.settings;
+    const { base, on401, onError } = FetcherSettings.settings;
 
     let resourceUrl = typeof url === 'function' ? url(urlParams!) : url;
-    resourceUrl = base && urlType !== 'absolute' ? base + resourceUrl : resourceUrl;
+    resourceUrl = base && urlType === 'absolute' ? resourceUrl : `${base ?? ''}${resourceUrl}`;
 
     const headers = await prepareHeaders(fetcherObject);
     const body = prepareBody(fetcherObject, options);
 
     let status = 0;
+    let response: Response | undefined;
+
     try {
-      const response = await fetch(resourceUrl, {
+      response = await fetch(resourceUrl, {
         method,
         headers,
         body,
       });
 
       status = response.status;
+
       if (status >= 200 && status < 300) {
-        const result: TSuccess = await readSuccessResponseData(response, responseType);
+        const result: TSuccess = await readResponseData(response, responseType);
 
         success?.(result);
         always?.();
@@ -49,18 +52,20 @@ namespace Fetcher {
         await on401();
       }
 
-      if (status === 400) {
-        const json: TError400 = await response.json();
+      const result = await readResponseData(response, errorResponseType);
 
-        fail400?.(json);
+      if (status === 400) {
+        fail400?.(result as TError400);
       }
 
-      throw response;
+      throw result;
     } catch (error) {
       const doNotCallFail = fail400 && status === 400;
-      doNotCallFail || fail?.({ error, status });
+      doNotCallFail || fail?.({ url: resourceUrl, error, response, name, body });
 
       always?.();
+
+      onError?.({ url: resourceUrl, error, response, name, body });
 
       throw error;
     }
@@ -112,10 +117,12 @@ namespace Fetcher {
     return body as BodyInit;
   }
 
-  async function readSuccessResponseData(response: Response, responseType?: ResponseType) {
+  async function readResponseData(response: Response, responseType?: ResponseType) {
     switch (responseType) {
       case 'blob':
         return await response.blob();
+      case 'text':
+        return await response.text();
       case 'empty':
         return null;
       default:

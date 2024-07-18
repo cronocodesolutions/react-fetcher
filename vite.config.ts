@@ -1,4 +1,4 @@
-import { defineConfig, PluginOption } from 'vite';
+import { defineConfig } from 'vitest/config';
 import dts from 'vite-plugin-dts';
 import path from 'path';
 
@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
       minify: mode !== 'dev',
       lib: {
         entry: path.resolve(__dirname, './src/index.ts'),
-        fileName: (format) => 'index.js',
+        fileName: () => 'index.js',
         formats: ['es'],
       },
       rollupOptions: {
