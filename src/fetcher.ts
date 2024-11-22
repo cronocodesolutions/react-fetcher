@@ -49,6 +49,7 @@ namespace Fetcher {
         const result = (await readResponseData(response, errorResponseType)) as TError400;
 
         fail400?.(result);
+        onError?.({ url: resourceUrl, error: result, response, name, body });
         always?.();
 
         return [undefined, result, response];
