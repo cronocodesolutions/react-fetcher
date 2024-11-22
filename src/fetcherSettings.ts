@@ -8,10 +8,10 @@ export interface FetcherError {
 
 interface Settings {
   base?: string;
-  on401?: () => Promise<void>;
   getToken?: () => Promise<string | undefined>;
-  headers?: Record<string, string>;
+  headers?: () => Record<string, string>;
   onError?: (data: FetcherError) => void;
+  on401?: () => void;
 }
 
 namespace FetcherSettings {

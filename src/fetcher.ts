@@ -16,7 +16,7 @@ namespace Fetcher {
   export async function go<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
-  ): Promise<TSuccess> {
+  ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response]> {
     const { url, urlType, method, responseType, errorResponseType, name } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
     const { base, on401, onError } = FetcherSettings.settings;
@@ -27,63 +27,60 @@ namespace Fetcher {
     const headers = await prepareHeaders(fetcherObject);
     const body = prepareBody(fetcherObject, options);
 
-    let status = 0;
-    let response: Response | undefined;
+    const response: Response = await fetch(resourceUrl, {
+      method,
+      headers,
+      body,
+    });
+
+    const { status } = response;
 
     try {
-      response = await fetch(resourceUrl, {
-        method,
-        headers,
-        body,
-      });
-
-      status = response.status;
-
       if (status >= 200 && status < 300) {
         const result: TSuccess = await readResponseData(response, responseType);
 
         success?.(result);
         always?.();
 
-        return result;
+        return [result, undefined, response];
+      }
+
+      if (status === 400) {
+        const result = (await readResponseData(response, errorResponseType)) as TError400;
+
+        fail400?.(result);
+        always?.();
+
+        return [undefined, result, response];
       }
 
       if (status === 401 && on401) {
         await on401();
       }
 
-      const result = await readResponseData(response, errorResponseType);
-
-      if (status === 400) {
-        fail400?.(result as TError400);
-      }
-
-      throw result;
+      throw response;
     } catch (error) {
-      const doNotCallFail = fail400 && status === 400;
-      doNotCallFail || fail?.({ url: resourceUrl, error, response, name, body });
-
+      fail?.({ url: resourceUrl, error, response, name, body });
+      onError?.({ url: resourceUrl, error, response, name, body });
       always?.();
 
-      onError?.({ url: resourceUrl, error, response, name, body });
-
-      throw error;
+      return [undefined, undefined, response];
     }
   }
 
   async function prepareHeaders<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization } = fetcherObject;
+    const { contentType, authorization = 'token' } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
 
-    const headers: Record<string, string> = globalHeaders ?? {};
+    const headers: Record<string, string> = globalHeaders?.() ?? {};
 
     if (!contentType || contentType === 'application/json') {
       headers['content-type'] = contentType || 'application/json';
     }
 
-    if (getToken && (!authorization || authorization === 'token')) {
+    if (getToken && authorization === 'token') {
       const token = await getToken();
       headers.Authorization = `Bearer ${token}`;
     }
