@@ -17,7 +17,7 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response | undefined]> {
-    const { url, urlType, method, responseType, errorResponseType, name } = fetcherObject || {};
+    const { url, urlType, method, responseType, errorResponseType, name, mode } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
     const { base, on401, onError } = FetcherSettings.settings;
 
@@ -34,6 +34,7 @@ namespace Fetcher {
         method,
         headers,
         body,
+        mode,
       });
 
       const { status } = response;
@@ -75,10 +76,10 @@ namespace Fetcher {
   async function prepareHeaders<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization = 'token' } = fetcherObject;
+    const { contentType, authorization = 'token', headers: objHeaders } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
 
-    const headers: Record<string, string> = globalHeaders?.() ?? {};
+    let headers: Record<string, string> = globalHeaders?.() ?? {};
 
     if (!contentType || contentType === 'application/json') {
       headers['content-type'] = contentType || 'application/json';
@@ -87,6 +88,10 @@ namespace Fetcher {
     if (getToken && authorization === 'token') {
       const token = await getToken();
       headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (objHeaders) {
+      headers = { ...headers, ...objHeaders };
     }
 
     return headers;
