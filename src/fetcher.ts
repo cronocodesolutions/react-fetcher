@@ -76,10 +76,10 @@ namespace Fetcher {
   async function prepareHeaders<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization = 'token', headers: objHeaders } = fetcherObject;
+    const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
 
-    let headers: Record<string, string> = globalHeaders?.() ?? {};
+    let headers: Record<string, string> = ignoreGlobalHeaders ? {} : (globalHeaders?.() ?? {});
 
     if (!contentType || contentType === 'application/json') {
       headers['content-type'] = contentType || 'application/json';

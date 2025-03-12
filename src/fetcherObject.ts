@@ -11,4 +11,5 @@ export interface FetcherObject<TSuccess = unknown, TError400 = unknown, TBody = 
   name?: string;
   mode?: RequestMode;
   headers?: Record<string, string>;
+  ignoreGlobalHeaders?: boolean;
 }
