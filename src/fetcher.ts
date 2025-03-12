@@ -16,7 +16,7 @@ namespace Fetcher {
   export async function go<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
-  ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response]> {
+  ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response | undefined]> {
     const { url, urlType, method, responseType, errorResponseType, name } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
     const { base, on401, onError } = FetcherSettings.settings;
@@ -27,15 +27,17 @@ namespace Fetcher {
     const headers = await prepareHeaders(fetcherObject);
     const body = prepareBody(fetcherObject, options);
 
-    const response: Response = await fetch(resourceUrl, {
-      method,
-      headers,
-      body,
-    });
-
-    const { status } = response;
+    let response: Response | undefined;
 
     try {
+      response = await fetch(resourceUrl, {
+        method,
+        headers,
+        body,
+      });
+
+      const { status } = response;
+
       if (status >= 200 && status < 300) {
         const result: TSuccess = await readResponseData(response, responseType);
 
@@ -49,6 +51,7 @@ namespace Fetcher {
         const result = (await readResponseData(response, errorResponseType)) as TError400;
 
         fail400?.(result);
+        fail?.({ url: resourceUrl, error: result, response, name, body });
         onError?.({ url: resourceUrl, error: result, response, name, body });
         always?.();
 
