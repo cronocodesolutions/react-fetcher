@@ -52,7 +52,11 @@ namespace Fetcher {
         const result = (await readResponseData(response, errorResponseType)) as TError400;
 
         fail400?.(result);
-        fail?.({ url: resourceUrl, error: result, response, name, body });
+
+        if (!fail400) {
+          fail?.({ url: resourceUrl, error: result, response, name, body });
+        }
+
         onError?.({ url: resourceUrl, error: result, response, name, body });
         always?.();
 
