@@ -6,6 +6,7 @@ type ErrorResponse = any; //TODO: define error structure
 export interface FetcherOptions<TSuccess, TError400, TBody, TUrlParams> {
   urlParams?: TUrlParams;
   body?: TBody;
+  headers?: Record<string, string>;
   success?: (result: TSuccess) => void;
   fail400?: (result: TError400) => void;
   fail?: (data: FetcherError) => void;
@@ -79,9 +80,11 @@ namespace Fetcher {
 
   async function prepareHeaders<TSuccess, TError400, TBody, TUrlParams>(
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
+    options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ) {
     const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
+    const { headers: optHeaders } = options || {};
 
     let headers: Record<string, string> = ignoreGlobalHeaders ? {} : (globalHeaders?.() ?? {});
 
@@ -96,6 +99,10 @@ namespace Fetcher {
 
     if (objHeaders) {
       headers = { ...headers, ...objHeaders };
+    }
+
+    if (optHeaders) {
+      headers = { ...headers, ...optHeaders };
     }
 
     return headers;
