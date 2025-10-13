@@ -25,7 +25,7 @@ namespace Fetcher {
     let resourceUrl = typeof url === 'function' ? url(urlParams!) : url;
     resourceUrl = base && urlType === 'absolute' ? resourceUrl : `${base ?? ''}${resourceUrl}`;
 
-    const headers = await prepareHeaders(fetcherObject);
+    const headers = await prepareHeaders(fetcherObject, options);
     const body = prepareBody(fetcherObject, options);
 
     let response: Response | undefined;
