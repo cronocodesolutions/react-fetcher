@@ -7,15 +7,16 @@
   "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.js",
-      "require": "./index.js",
-      "types": "./index.d.ts"
+      "require": "./index.js"
     }
   },
   "scripts": {
     "build": "vite build",
     "postbuild": "cp package.json dist & cp LICENSE dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "compile": "tsc --noEmit --skipLibCheck"
   },
   "repository": {
     "type": "git",
@@ -35,15 +36,15 @@
   },
   "homepage": "https://github.com/cronocodesolutions/react-fetcher#readme",
   "devDependencies": {
-    "@types/node": "^22.1.0",
-    "@types/react": "^18.3.3",
-    "prettier": "^3.3.3",
-    "typescript": "^5.5.4",
-    "vite": "^5.4.0",
-    "vite-plugin-dts": "^4.0.1",
-    "vitest": "^2.0.5"
+    "@types/node": "^25.4.0",
+    "@types/react": "^19.2.14",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
-    "react": "^18.3.1"
+    "react": "^19.2.4"
   }
 }

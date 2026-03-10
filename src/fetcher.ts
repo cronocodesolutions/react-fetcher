@@ -82,13 +82,14 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders } = fetcherObject;
+    const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders, method } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
     const { headers: optHeaders } = options || {};
 
     let headers: Record<string, string> = ignoreGlobalHeaders ? {} : (globalHeaders?.() ?? {});
 
-    if (!contentType || contentType === 'application/json') {
+    const hasBody = method && !['GET', 'HEAD'].includes(method);
+    if (hasBody && (!contentType || contentType === 'application/json')) {
       headers['content-type'] = contentType || 'application/json';
     }
 
