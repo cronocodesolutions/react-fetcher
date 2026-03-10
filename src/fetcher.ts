@@ -11,6 +11,7 @@ export interface FetcherOptions<TSuccess, TError400, TBody, TUrlParams> {
   fail400?: (result: TError400) => void;
   fail?: (data: FetcherError) => void;
   always?: () => void;
+  onStatus?: Partial<Record<number, (body: any, response: Response) => void>>;
 }
 
 namespace Fetcher {
@@ -20,7 +21,7 @@ namespace Fetcher {
   ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response | undefined]> {
     const { url, urlType, method, responseType, errorResponseType, name, mode } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
-    const { base, on401, onError } = FetcherSettings.settings;
+    const { base, on401, on403, onError } = FetcherSettings.settings;
 
     let resourceUrl = typeof url === 'function' ? url(urlParams!) : url;
     resourceUrl = base && urlType === 'absolute' ? resourceUrl : `${base ?? ''}${resourceUrl}`;
@@ -49,16 +50,24 @@ namespace Fetcher {
         return [result, undefined, response];
       }
 
+      if (options?.onStatus?.[status]) {
+        const result = await readResponseData(response, errorResponseType);
+        options.onStatus[status]!(result, response);
+        onError?.({ url: resourceUrl, error: result, response, status, name, body });
+        always?.();
+        return [undefined, result as TError400, response];
+      }
+
       if (status === 400) {
         const result = (await readResponseData(response, errorResponseType)) as TError400;
 
         fail400?.(result);
 
         if (!fail400) {
-          fail?.({ url: resourceUrl, error: result, response, name, body });
+          fail?.({ url: resourceUrl, error: result, response, status, name, body });
         }
 
-        onError?.({ url: resourceUrl, error: result, response, name, body });
+        onError?.({ url: resourceUrl, error: result, response, status, name, body });
         always?.();
 
         return [undefined, result, response];
@@ -68,10 +77,14 @@ namespace Fetcher {
         await on401();
       }
 
+      if (status === 403 && on403) {
+        await on403();
+      }
+
       throw response;
     } catch (error) {
-      fail?.({ url: resourceUrl, error, response, name, body });
-      onError?.({ url: resourceUrl, error, response, name, body });
+      fail?.({ url: resourceUrl, error, response, status: response?.status, name, body });
+      onError?.({ url: resourceUrl, error, response, status: response?.status, name, body });
       always?.();
 
       return [undefined, undefined, response];
@@ -82,13 +95,14 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ) {
-    const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders } = fetcherObject;
+    const { contentType, authorization = 'token', headers: objHeaders, ignoreGlobalHeaders, method } = fetcherObject;
     const { getToken, headers: globalHeaders } = FetcherSettings.settings;
     const { headers: optHeaders } = options || {};
 
     let headers: Record<string, string> = ignoreGlobalHeaders ? {} : (globalHeaders?.() ?? {});
 
-    if (!contentType || contentType === 'application/json') {
+    const hasBody = method && !['GET', 'HEAD'].includes(method);
+    if (hasBody && (!contentType || contentType === 'application/json')) {
       headers['content-type'] = contentType || 'application/json';
     }
 
@@ -135,6 +149,10 @@ namespace Fetcher {
   }
 
   async function readResponseData(response: Response, responseType?: ResponseType) {
+    if (response.status === 204 || response.status === 205) {
+      return null;
+    }
+
     switch (responseType) {
       case 'blob':
         return await response.blob();
