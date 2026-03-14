@@ -19,9 +19,10 @@ namespace Fetcher {
     fetcherObject: FetcherObject<TSuccess, TError400, TBody, TUrlParams>,
     options?: FetcherOptions<TSuccess, TError400, TBody, TUrlParams>,
   ): Promise<[TSuccess, undefined, Response] | [undefined, TError400, Response] | [undefined, undefined, Response | undefined]> {
-    const { url, urlType, method, responseType, errorResponseType, name, mode } = fetcherObject || {};
+    const { url, urlType, method, responseType, errorResponseType, name, mode, credentials: objCredentials } = fetcherObject || {};
     const { success, fail, fail400, always, urlParams } = options || {};
-    const { base, on401, on403, onError } = FetcherSettings.settings;
+    const { base, on401, on403, onError, credentials: globalCredentials } = FetcherSettings.settings;
+    const credentials = objCredentials ?? globalCredentials;
 
     let resourceUrl = typeof url === 'function' ? url(urlParams!) : url;
     resourceUrl = base && urlType === 'absolute' ? resourceUrl : `${base ?? ''}${resourceUrl}`;
@@ -37,6 +38,7 @@ namespace Fetcher {
         headers,
         body,
         mode,
+        credentials,
       });
 
       const { status } = response;

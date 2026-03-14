@@ -10,6 +10,7 @@ export interface FetcherObject<TSuccess = unknown, TError400 = unknown, TBody = 
   errorResponseType?: ResponseType;
   name?: string;
   mode?: RequestMode;
+  credentials?: RequestCredentials;
   headers?: Record<string, string>;
   ignoreGlobalHeaders?: boolean;
 }
