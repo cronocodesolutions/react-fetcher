@@ -14,6 +14,7 @@ interface Settings {
   onError?: (data: FetcherError) => void;
   on401?: () => void;
   on403?: () => void;
+  credentials?: RequestCredentials;
 }
 
 namespace FetcherSettings {

@@ -557,6 +557,40 @@ describe('fetcher', () => {
 
       expect(globalThis.fetch).toHaveBeenCalledWith('/test', expect.objectContaining({ mode: 'cors' }));
     });
+
+    it('passes global credentials to fetch', async () => {
+      fetcherSetup({ credentials: 'include' });
+      globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 }));
+
+      await Fetcher.go({ url: '/test' });
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/test', expect.objectContaining({ credentials: 'include' }));
+    });
+
+    it('passes per-request credentials to fetch', async () => {
+      globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 }));
+
+      await Fetcher.go({ url: '/test', credentials: 'same-origin' });
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/test', expect.objectContaining({ credentials: 'same-origin' }));
+    });
+
+    it('per-request credentials overrides global credentials', async () => {
+      fetcherSetup({ credentials: 'include' });
+      globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 }));
+
+      await Fetcher.go({ url: '/test', credentials: 'omit' });
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/test', expect.objectContaining({ credentials: 'omit' }));
+    });
+
+    it('credentials is undefined when not set globally or per-request', async () => {
+      globalThis.fetch = vi.fn(async () => new Response('{}', { status: 200 }));
+
+      await Fetcher.go({ url: '/test' });
+
+      expect(globalThis.fetch).toHaveBeenCalledWith('/test', expect.objectContaining({ credentials: undefined }));
+    });
   });
 
   // --- FetcherError shape ---
